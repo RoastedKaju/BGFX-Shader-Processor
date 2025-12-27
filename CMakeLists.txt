@@ -26,4 +26,4 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_ROOT_PATH="${CMAKE_SOU
 # Shader binary folder
 target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BIN_PATH="${CMAKE_SOURCE_DIR}/build/shaders")
 # Shader tool folder
-target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_TOOL_PATH="${CMAKE_SOURCE_DIR}/tools/shadercRelease.exe")
+target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_TOOL_PATH="${CMAKE_SOURCE_DIR}/tools")

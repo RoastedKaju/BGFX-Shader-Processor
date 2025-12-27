@@ -13,6 +13,12 @@
 #define LOG_LINE(x) std::cout << x << '\n'
 #define LOG(x) std::cout << x
 
+// forward decal functions
+std::vector<std::filesystem::path> findFiles(const std::string& folderPath);
+bool runProcess(const std::wstring& exe, const std::wstring& args);
+void processShaders(const std::vector<std::filesystem::path>& files);
+
+
 std::vector<std::filesystem::path> findFiles(const std::string& folderPath)
 {
 	namespace fs = std::filesystem;
@@ -40,7 +46,14 @@ std::vector<std::filesystem::path> findFiles(const std::string& folderPath)
 
 void processShaders(const std::vector<std::filesystem::path>& files)
 {
+	namespace fs = std::filesystem;
+
 	std::string type = "";
+	const fs::path shaderExec = fs::path(SHADER_TOOL_PATH) / "shadercRelease.exe";
+	const fs::path outputDir = fs::path(SHADER_BIN_PATH);
+	const fs::path sourceDir = fs::path(SHADER_ROOT_PATH);
+	const fs::path varyingPath = fs::path(SHADER_TOOL_PATH) / "varying.def.sc";
+
 
 	// If shader folder in build does not exist create it
 	if (!std::filesystem::exists(SHADER_BIN_PATH))
@@ -69,8 +82,58 @@ void processShaders(const std::vector<std::filesystem::path>& files)
 			continue;
 		}
 
-		namespace fs = std::filesystem;
+		fs::path inputFile = sourceDir / file;
+		fs::path outputFile = outputDir / (file.stem().string() + ".bin");
+
+		// Build command
+		std::wstring cmd =
+			L"-f \"" + inputFile.wstring() + L"\" "
+			L"-o \"" + outputFile.wstring() + L"\" "
+			L"--type " + std::wstring(type.begin(), type.end()) + L" "
+			L"--platform windows "
+			L"--profile 120 "
+			L"-i \"" + fs::path(SHADER_TOOL_PATH).wstring() + L"\" "
+			L"--varyingdef \"" + varyingPath.wstring() + L"\"";
+
+		if (!runProcess(shaderExec.wstring(), cmd))
+		{
+			LOG_LINE("Failed to run shaderc.");
+		}
 	}
+}
+
+bool runProcess(const std::wstring& exe, const std::wstring& args)
+{
+	STARTUPINFOW si{};
+	si.cb = sizeof(si);
+
+	PROCESS_INFORMATION pi{};
+
+	// CreateProcessW requires a mutable buffer
+	std::vector<wchar_t> cmd(args.begin(), args.end());
+	cmd.push_back(L'\0');
+
+	BOOL ok = CreateProcessW(
+		exe.c_str(),          // lpApplicationName (full path to exe)
+		cmd.data(),           // lpCommandLine (arguments only)
+		nullptr,
+		nullptr,
+		FALSE,
+		0,
+		nullptr,
+		nullptr,
+		&si,
+		&pi
+	);
+
+	if (!ok)
+		return false;
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+	return true;
 }
 
 int main()
