@@ -20,3 +20,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     bgfx::bgfx
     bgfx::bimg
     bgfx::bimg_decode)
+
+# Shader root folder
+target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_ROOT_PATH="${CMAKE_SOURCE_DIR}/shaders")
+# Shader binary folder
+target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BIN_PATH="${CMAKE_SOURCE_DIR}/build/shaders")
+# Shader tool folder
+target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_TOOL_PATH="${CMAKE_SOURCE_DIR}/tools/shadercRelease.exe")
