@@ -180,13 +180,6 @@ int main()
 	
 	const auto& files = shader::processor::findShaderFiles(std::filesystem::path(SHADER_ROOT_PATH));
 
-	for (const auto& file : files)
-	{
-      std::cout << file.filename().string() << std::endl;
-	}
-
-	std::cout << "=============== SHADER FILE TYPE ===============" << std::endl;
-
 	shader::processor::processShaders(files, SHADER_ROOT_PATH, SHADER_BIN_PATH,
                                   SHADER_TOOL_PATH);
 

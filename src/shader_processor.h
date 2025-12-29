@@ -1,17 +1,25 @@
 #ifndef SHADER_PROCESSOR_H_
 #define SHADER_PROCESSOR_H_
 
+#include <codecvt>
 #include <filesystem>
 #include <iostream>
+#include <locale>
 #include <sstream>
 #include <string>
 #include <vector>
 
 namespace shader::processor::internal {
+/// Logger
+void (*log)(const std::string&) = [](const std::string& msg) {
+  std::cout << msg << std::endl;
+};
+
+/// Enum for shader type
 enum class ShaderFileType { Unknown, Vertex, Fragment };
 
 /// Converts Enum `ShaderFileType` to WString
-/// 
+///
 /// @param `ShaderFileType` enum
 /// @return WString of shader type
 inline std::wstring shaderTypeToWString(ShaderFileType type) {
@@ -27,6 +35,12 @@ inline std::wstring shaderTypeToWString(ShaderFileType type) {
   }
 }
 
+/// <summary>
+///
+/// </summary>
+/// <param name="exec_file"></param>
+/// <param name="args"></param>
+/// <returns></returns>
 inline bool runProcess(const std::wstring& exec_file,
                        const std::wstring& args) {
   STARTUPINFOW si{};
@@ -42,8 +56,13 @@ inline bool runProcess(const std::wstring& exec_file,
                            FALSE, 0, nullptr, nullptr, &si, &pi);
 
   if (!ok) {
+    // make error string
     DWORD err = GetLastError();
-    std::wcerr << L"Failed to start process, error: " << err << std::endl;
+    const std::string err_string =
+        "Failed to start process, error: " + std::to_string(err);
+    // Call log
+    log(err_string);
+
     return false;
   }
 
@@ -101,6 +120,7 @@ inline std::vector<std::filesystem::path> findShaderFiles(
 inline internal::ShaderFileType detectShaderFileType(
     const std::filesystem::path& file) {
 
+  // remove the file extension (.cs) from file
   const auto stem = file.stem();
 
   if (stem.extension() == ".vs") {
@@ -112,6 +132,13 @@ inline internal::ShaderFileType detectShaderFileType(
   return internal::ShaderFileType::Unknown;
 }
 
+/// <summary>
+///
+/// </summary>
+/// <param name="files"></param>
+/// <param name="shader_source_dir"></param>
+/// <param name="shader_bin_dir"></param>
+/// <param name="shader_tool_dir"></param>
 inline void processShaders(const std::vector<std::filesystem::path>& files,
                            const std::filesystem::path& shader_source_dir,
                            const std::filesystem::path& shader_bin_dir,
@@ -142,18 +169,19 @@ inline void processShaders(const std::vector<std::filesystem::path>& files,
       continue;
     }
 
+    // log discovered shader file
+    si::log("Discovered shader file : " + file.generic_string());
+
     // setup input and output file paths
     fs::path input_file = fs::absolute(file);
     fs::path output_file = fs::absolute(shader_bin_dir / file.filename());
     // replace .sc with .bin
     output_file.replace_extension(".bin");
 
-    std::cout << input_file.string() << std::endl;
-    std::cout << output_file.string() << std::endl;
+    // wstring version of shader type
+    std::wstring shader_type_wstr = si::shaderTypeToWString(shader_type);
 
-    std::wstring shader_type_wstr =
-        shader_type == si::ShaderFileType::Vertex ? L"vertex" : L"fragment";
-
+    // Build command using wstringstream
     std::wstringstream command;
     command << L"-f \"" << input_file.wstring() << L"\" " << L"-o \""
             << output_file.wstring() << L"\" " << L"--type " << shader_type_wstr
@@ -161,8 +189,13 @@ inline void processShaders(const std::vector<std::filesystem::path>& files,
             << fs::absolute(shader_tool_dir).wstring() << L"\" "
             << L"--varyingdef \"" << varying_file_path.wstring() << L"\"";
 
-    if (!si::runProcess(shader_exec_path.wstring(), command.str())) {
-      std::cout << "Failed to process " << filename << std::endl;
+    // run shaderc program with paths as arguments
+    if (si::runProcess(shader_exec_path.wstring(), command.str())) {
+      //print success message to log
+      const std::string success_msg =
+          "Successfuly processed shader : " + output_file.generic_string();
+
+      si::log(success_msg);
     }
   }
 }
