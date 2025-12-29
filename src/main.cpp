@@ -10,6 +10,8 @@
 #include "bgfx/platform.h"
 #include "bx/platform.h"
 
+#include "shader_processor.h"
+
 #define LOG_LINE(x) std::cout << x << '\n'
 #define LOG(x) std::cout << x
 
@@ -169,10 +171,24 @@ int main()
 	bgfx::touch(0);
 	bgfx::frame();
 
-	// Shader root path macro defined in CMake
-	const auto& shaderFiles = findFiles(SHADER_ROOT_PATH);
-	// convert the .sc to .bin
-	processShaders(shaderFiles);
+	//// Shader root path macro defined in CMake
+	//const auto& shaderFiles = findFiles(SHADER_ROOT_PATH);
+	//// convert the .sc to .bin
+	//processShaders(shaderFiles);
+
+	std::cout << "=============== SHADER PROCESSOR ===============" << std::endl;
+	
+	const auto& files = shader::processor::findShaderFiles(std::filesystem::path(SHADER_ROOT_PATH));
+
+	for (const auto& file : files)
+	{
+      std::cout << file.filename().string() << std::endl;
+	}
+
+	std::cout << "=============== SHADER FILE TYPE ===============" << std::endl;
+
+	shader::processor::processShaders(files, SHADER_ROOT_PATH, SHADER_BIN_PATH,
+                                  SHADER_TOOL_PATH);
 
 	bgfx::shutdown();
 
