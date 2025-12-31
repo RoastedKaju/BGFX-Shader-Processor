@@ -19,7 +19,7 @@ inline std::function<void(std::string_view)> log = +[](std::string_view msg) {
 
 namespace internal {
 /// Enum for shader type
-enum class ShaderFileType { Unknown, Vertex, Fragment };
+enum class ShaderFileType { Unknown, Vertex, Fragment, Geometry, Tessellation };
 
 /// Converts Enum `ShaderFileType` to WString
 ///
@@ -33,6 +33,11 @@ inline std::wstring shaderTypeToWString(ShaderFileType type) {
       return L"vertex";
     case ShaderFileType::Fragment:
       return L"fragment";
+    case ShaderFileType::Geometry:
+      return L"geometry";
+    case ShaderFileType::Tessellation:
+      return L"tessellation";
+
     default:
       return L"unknown";
   }
@@ -115,8 +120,8 @@ inline std::vector<std::filesystem::path> findShaderFiles(
 /// Stems the file extension and detects the type of shader based on filename
 ///
 /// .vs for Vertex shader and .fs for Fragment shader
-/// .gs for geometry shader and .ts tessellation shader 
-/// 
+/// .gs for geometry shader and .ts tessellation shader
+///
 /// @param file path to shader file
 /// @return Enum of `ShaderFileType`
 inline internal::ShaderFileType detectShaderFileType(
@@ -129,6 +134,10 @@ inline internal::ShaderFileType detectShaderFileType(
     return internal::ShaderFileType::Vertex;
   } else if (stem.extension() == ".fs") {
     return internal::ShaderFileType::Fragment;
+  } else if (stem.extension() == ".gs") {
+    return internal::ShaderFileType::Geometry;
+  } else if (stem.extension() == ".ts") {
+    return internal::ShaderFileType::Tessellation;
   }
 
   return internal::ShaderFileType::Unknown;
@@ -137,7 +146,7 @@ inline internal::ShaderFileType detectShaderFileType(
 /// Processes the shader from their raw .sc form to .bin format
 ///
 /// Internally creates windows process to run `shaderc` program and process the shaders into binary
-/// 
+///
 /// @param files A vector of file paths to process
 /// @param shader_bin_dir output directory where binary shaders will be placed
 /// @param shader_tool_dir directory where `shaderc.exe` lives along side bgfx_shader.sh and varying.def.sc
