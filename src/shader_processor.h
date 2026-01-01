@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#define NOMINMAX
+#include <Windows.h>
 
 namespace shader::processor {
 
